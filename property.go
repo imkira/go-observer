@@ -16,7 +16,7 @@ type Property interface {
 	Observe() Stream
 }
 
-// NewProperty creates a new Property with initial value value.
+// NewProperty creates a new Property with the initial value value.
 // It returns the created Property.
 func NewProperty(value interface{}) Property {
 	return &property{state: newState(value)}

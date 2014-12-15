@@ -23,10 +23,10 @@ There are two problems with this approach:
   channel is finally ready.
 - It is O(N). The more observers you have, the worse this loop will behave.
 
-Of course this could be solved by creating one goroutine for each channel so
-the broadcaster doesn't block. Unfortunately this is heavy and resource
-consuming. This is especially bad if you have events being raised frequently
-time and a considerable number of observers.
+Of course, this could be solved by creating one goroutine for each channel so
+the broadcaster doesn't block. Unfortunately, this is heavy and
+resource-consuming. This is especially bad if you have events being raised
+frequently and a considerable number of observers.
 
 # Approach
 
@@ -46,7 +46,7 @@ only discarded when you advance to the next value.
 
 # Memory Usage
 
-The ammount of memory used for one property is not dependent on the number of
+The amount of memory used for one property is not dependent on the number of
 observers. It should be proportional to the number of value updates since the
 value last obtained by the slowest observer. As long as you keep advancing all
 your observers, garbage collection will take place and keep memory usage
@@ -62,7 +62,7 @@ go get -u github.com/imkira/go-observer
 
 Then, you need to include it in your source:
 
-```
+```go
 import "github.com/imkira/go-observer"
 ```
 
@@ -80,7 +80,7 @@ For advanced usage, make sure to check the
 
 ```go
 val := 1
-// create a property with initial value
+// create a property with an initial value
 prop := observe.Property(val)
 for {
   time.Sleep(time.Second)
