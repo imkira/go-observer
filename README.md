@@ -1,6 +1,7 @@
 # observer
 
 [![License](http://img.shields.io/badge/license-MIT-red.svg?style=flat)](https://github.com/imkira/go-observer/blob/master/LICENSE.txt)
+[![GoDoc](https://godoc.org/github.com/imkira/go-observer?status.svg)](https://godoc.org/github.com/imkira/go-observer)
 [![Build Status](http://img.shields.io/travis/imkira/go-observer.svg?style=flat)](https://travis-ci.org/imkira/go-observer)
 [![Coverage](http://img.shields.io/codecov/c/github/imkira/go-observer.svg?style=flat)](https://codecov.io/github/imkira/go-observer)
 
