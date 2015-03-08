@@ -1,0 +1,15 @@
+language: go
+
+go:
+  - 1.3
+  - tip
+
+before_install:
+  - sudo pip install codecov
+  - go get code.google.com/p/go.tools/cmd/cover
+
+script:
+  - go test -coverprofile=coverage.txt -covermode=count
+
+after_success:
+  - codecov
