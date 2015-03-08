@@ -67,7 +67,7 @@ func TestPropertyMultipleConcurrentObservers(t *testing.T) {
 		close(err)
 	}
 	initial := 1000
-	final := 100000
+	final := 2000
 	prop := NewProperty(initial)
 	var cherrs []chan error
 	for i := 0; i < 1000; i++ {

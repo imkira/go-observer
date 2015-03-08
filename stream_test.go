@@ -160,7 +160,7 @@ func TestStreamConcurrencyWithClones(t *testing.T) {
 		close(err)
 	}
 	initial := 1000
-	final := 100000
+	final := 2000
 	prop := NewProperty(initial)
 	stream := prop.Observe()
 	var cherrs []chan error
