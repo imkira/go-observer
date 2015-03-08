@@ -11,7 +11,7 @@ before_install:
   - go get golang.org/x/tools/cmd/cover
 
 script:
-  - go test -coverprofile=coverage.txt -covermode=count
+  - go test -race -coverprofile=coverage.txt -covermode=count
 
 after_success:
   - codecov
