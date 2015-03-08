@@ -1,6 +1,9 @@
 package observer
 
-import "testing"
+import (
+	"fmt"
+	"testing"
+)
 
 func TestStreamInitialValue(t *testing.T) {
 	state := newState(10)
@@ -63,4 +66,83 @@ func TestStreamWaitsNext(t *testing.T) {
 	if stream.HasNext() {
 		t.Fatalf("Expecting no changes\n")
 	}
+}
+
+func TestStreamClone(t *testing.T) {
+	state := newState(10)
+	stream1 := &stream{state: state}
+	stream2 := stream1.Clone()
+	if stream2.HasNext() {
+		t.Fatalf("Expecting no changes\n")
+	}
+	if val := stream2.Value(); val != 10 {
+		t.Fatalf("Expecting 10 but got %#v\n", val)
+	}
+	state.update(15)
+	if !stream1.HasNext() {
+		t.Fatalf("Expecting changes\n")
+	}
+	if !stream2.HasNext() {
+		t.Fatalf("Expecting changes\n")
+	}
+	stream1.Next()
+	if val := stream1.Value(); val != 15 {
+		t.Fatalf("Expecting 15 but got %#v\n", val)
+	}
+	if val := stream2.Value(); val != 10 {
+		t.Fatalf("Expecting 10 but got %#v\n", val)
+	}
+	stream2.Next()
+	if val := stream2.Value(); val != 15 {
+		t.Fatalf("Expecting 15 but got %#v\n", val)
+	}
+	if stream1.HasNext() {
+		t.Fatalf("Expecting no changes\n")
+	}
+	if stream2.HasNext() {
+		t.Fatalf("Expecting no changes\n")
+	}
+}
+
+func TestStreamConcurrencyWithClones(t *testing.T) {
+	observer := func(s Stream, initial, final int, err chan error) {
+		val := s.Value().(int)
+		if val != initial {
+			err <- fmt.Errorf("Expecting %#v but got %#v\n", initial, val)
+			return
+		}
+		for i := initial + 1; i <= final; i++ {
+			prevVal := val
+			val = s.WaitNext().(int)
+			expected := prevVal + 1
+			if val != expected {
+				err <- fmt.Errorf("Expecting %#v but got %#v\n", expected, val)
+				return
+			}
+		}
+		close(err)
+	}
+	initial := 1000
+	final := 100000
+	prop := NewProperty(initial)
+	stream := prop.Observe()
+	var cherrs []chan error
+	for i := 0; i < 1000; i++ {
+		cherr := make(chan error, 1)
+		cherrs = append(cherrs, cherr)
+		go observer(stream.Clone(), initial, final, cherr)
+	}
+	done := make(chan bool)
+	go func(prop Property, initial, final int, done chan bool) {
+		defer close(done)
+		for i := initial + 1; i <= final; i++ {
+			prop.Update(i)
+		}
+	}(prop, initial, final, done)
+	for _, cherr := range cherrs {
+		if err := <-cherr; err != nil {
+			t.Fatal(err)
+		}
+	}
+	<-done
 }

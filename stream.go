@@ -24,7 +24,10 @@ type Stream interface {
 	// the current value.
 	WaitNext() interface{}
 
-	// Clone creates a new independent stream from this one.
+	// Clone creates a new independent stream from this one but sharing the same
+	// Property. Updates to the property will be reflected in both streams but
+	// they may have different values depending on when they advance the stream
+	// with Next.
 	Clone() Stream
 }
 
@@ -33,7 +36,7 @@ type stream struct {
 }
 
 func (s *stream) Clone() Stream {
-	return &stream{state: newState(s.state.value)}
+	return &stream{state: s.state}
 }
 
 func (s *stream) Value() interface{} {
