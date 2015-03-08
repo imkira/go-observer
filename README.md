@@ -1,5 +1,9 @@
 # observer
 
+[![License](http://img.shields.io/badge/license-MIT-red.svg?style=flat)](https://github.com/imkira/go-observer/blob/master/LICENSE.txt)
+[![Build Status](http://img.shields.io/travis/imkira/go-observer.svg?style=flat)](https://travis-ci.org/imkira/go-observer)
+[![Coverage](http://img.shields.io/codecov/c/github/imkira/go-observer.svg?style=flat)](https://codecov.io/github/imkira/go-observer)
+
 observer is a [Go](http://golang.org) package that aims to simplify the problem
 of channel-based broadcasting of events from one or more publishers to one or
 more observers.
