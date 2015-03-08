@@ -3,6 +3,7 @@ package observer
 import (
 	"fmt"
 	"testing"
+	"time"
 )
 
 func TestStreamInitialValue(t *testing.T) {
@@ -36,6 +37,42 @@ func TestStreamNextValue(t *testing.T) {
 	state2.update(20)
 	if val := stream.Next(); val != 20 {
 		t.Fatalf("Expecting 20 but got %#v\n", val)
+	}
+}
+
+func TestStreamDetectsChanges(t *testing.T) {
+	state := newState(10)
+	stream := &stream{state: state}
+	select {
+	case <-stream.Changes():
+		t.Fatalf("Expecting no changes\n")
+	default:
+	}
+	go func() {
+		time.Sleep(1 * time.Second)
+		state.update(15)
+	}()
+	select {
+	case <-stream.Changes():
+	case <-time.After(2 * time.Second):
+		t.Fatalf("Expecting changes\n")
+	}
+	for i := 0; i <= 100; i++ {
+		select {
+		case <-stream.Changes():
+		default:
+			t.Fatalf("Expecting changes\n")
+		}
+	}
+	if val := stream.Next(); val != 15 {
+		t.Fatalf("Expecting 15 but got %#v\n", val)
+	}
+	for i := 0; i <= 100; i++ {
+		select {
+		case <-stream.Changes():
+			t.Fatalf("Expecting no changes\n")
+		default:
+		}
 	}
 }
 
