@@ -1,11 +1,12 @@
 package observer
 
-// Stream represents the list of values a property is updated to.
-// For every property update, that value is appended to the list in the order
-// they happen. The value is discarded once you advance the stream.
-// Please note that Stream is not goroutine safe: if you have multiple
-// goroutines in which you want to observe a property, you must create at least
-// one Stream for each goroutine.
+// Stream represents the list of values a property is updated to.  For every
+// property update, that value is appended to the list in the order they
+// happen. The value is discarded once you advance the stream.  Please note
+// that Stream is not goroutine safe: you cannot use the same stream on
+// multiple goroutines concurrently. If you want to use multiple streams for
+// the same property, either use Property.Observe (goroutines-safe) or use
+// Stream.Clone (before passing it to another goroutine).
 type Stream interface {
 	// Value returns the current value for this stream.
 	Value() interface{}
