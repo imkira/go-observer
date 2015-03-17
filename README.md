@@ -81,16 +81,29 @@ or more publishers, and observed by one or more observers.
 For advanced usage, make sure to check the
 [available documentation here](http://godoc.org/github.com/imkira/go-observer).
 
-## Example: Publisher
+## Example: Creating a Property
+
+The following code creates a property with initial value ```1````.
 
 ```go
 val := 1
-// create a property with an initial value
-prop := observe.Property(val)
+prop := observer.NewProperty(val)
+```
+
+After creating the property, you can pass it around to publishers or
+observers as you want.
+
+## Example: Publisher
+
+The following code represents a publisher that increments the value of the
+property by one every second.
+
+```go
+val := 1
 for {
   time.Sleep(time.Second)
   val += 1
-  // set new value
+  fmt.Printf("will publish value: %d\n", val)
   prop.Update(val)
 }
 ```
@@ -102,10 +115,15 @@ goroutines.
 
 ## Example: Observer
 
+The following code represents an observer that prints the initial value of a
+property and waits indefinitely for changes to its value. When there is a
+change, the stream is advanced and the current value of the property is
+printed.
+
 ```go
 stream := prop.Observe()
-// initial value
 val := stream.Value().(int)
+fmt.Printf("initial value: %d\n", val)
 for {
   select {
     // wait for changes
@@ -113,7 +131,8 @@ for {
       // advance to next value
       stream.Next()
       // new value
-      val := stream.Value().(int)
+      val = stream.Value().(int)
+      fmt.Printf("got new value: %d\n", val)
   }
 }
 ```
@@ -121,7 +140,8 @@ for {
 Note:
 
 - Stream is not goroutine safe: You must create one stream by calling
-  ```Observe()``` for each goroutine you use that stream in.
+  ```Property.Observe()``` or ```Stream.Clone()``` if you want to have
+  concurrent observers for the same property or stream.
 
 ## Example
 
