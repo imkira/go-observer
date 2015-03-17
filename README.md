@@ -83,7 +83,7 @@ For advanced usage, make sure to check the
 
 ## Example: Creating a Property
 
-The following code creates a property with initial value ```1````.
+The following code creates a property with initial value ```1```.
 
 ```go
 val := 1
