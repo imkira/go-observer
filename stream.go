@@ -5,7 +5,7 @@ package observer
 // happen. The value is discarded once you advance the stream.  Please note
 // that Stream is not goroutine safe: you cannot use the same stream on
 // multiple goroutines concurrently. If you want to use multiple streams for
-// the same property, either use Property.Observe (goroutines-safe) or use
+// the same property, either use Property.Observe (goroutine-safe) or use
 // Stream.Clone (before passing it to another goroutine).
 type Stream interface {
 	// Value returns the current value for this stream.
