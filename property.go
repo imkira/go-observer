@@ -29,18 +29,18 @@ type property struct {
 
 func (p *property) Value() interface{} {
 	p.RLock()
-	p.RUnlock()
+	defer p.RUnlock()
 	return p.state.value
 }
 
 func (p *property) Update(value interface{}) {
 	p.Lock()
-	p.Unlock()
+	defer p.Unlock()
 	p.state = p.state.update(value)
 }
 
 func (p *property) Observe() Stream {
 	p.RLock()
-	p.RUnlock()
+	defer p.RUnlock()
 	return &stream{state: p.state}
 }

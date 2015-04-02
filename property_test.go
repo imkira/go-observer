@@ -2,6 +2,7 @@ package observer
 
 import (
 	"fmt"
+	"sync"
 	"testing"
 )
 
@@ -48,8 +49,8 @@ func TestPropertyObserveAfterUpdate(t *testing.T) {
 	}
 }
 
-func TestPropertyMultipleConcurrentObservers(t *testing.T) {
-	observer := func(s Stream, initial, final int, err chan error) {
+func TestPropertyMultipleConcurrentReaders(t *testing.T) {
+	reader := func(s Stream, initial, final int, err chan error) {
 		val := s.Value().(int)
 		if val != initial {
 			err <- fmt.Errorf("Expecting %#v but got %#v\n", initial, val)
@@ -73,7 +74,7 @@ func TestPropertyMultipleConcurrentObservers(t *testing.T) {
 	for i := 0; i < 1000; i++ {
 		cherr := make(chan error, 1)
 		cherrs = append(cherrs, cherr)
-		go observer(prop.Observe(), initial, final, cherr)
+		go reader(prop.Observe(), initial, final, cherr)
 	}
 	done := make(chan bool)
 	go func(prop Property, initial, final int, done chan bool) {
@@ -88,4 +89,23 @@ func TestPropertyMultipleConcurrentObservers(t *testing.T) {
 		}
 	}
 	<-done
+}
+
+func TestPropertyMultipleConcurrentReadersWriters(t *testing.T) {
+	wg := &sync.WaitGroup{}
+	writer := func(prop Property, times int) {
+		defer wg.Done()
+		for i := 0; i <= times; i++ {
+			val := prop.Value().(int)
+			prop.Update(val + 1)
+			prop.Observe()
+		}
+	}
+	prop := NewProperty(0)
+	times := 1000
+	for i := 0; i < 1000; i++ {
+		wg.Add(1)
+		go writer(prop, times)
+	}
+	wg.Wait()
 }
