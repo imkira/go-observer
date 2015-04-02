@@ -9,7 +9,7 @@ golint:
 		golint .
 
 govet:
-		go tool vet -all .
+		go tool vet -all -v=true .
 
 test:
-	go test -race -cpu=1,2,4 -coverprofile=coverage.txt -covermode=atomic
+	go test -v -race -cpu=1,2,4 -coverprofile=coverage.txt -covermode=atomic
