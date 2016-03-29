@@ -7,7 +7,6 @@ go:
   - tip
 
 before_install:
-  - sudo pip install codecov
   - go get -u golang.org/x/tools/cmd/cover
   - if [[ $TRAVIS_GO_VERSION == 1.6* ]]; then go get -u github.com/golang/lint/golint; fi
   - go get -u golang.org/x/tools/cmd/vet
@@ -20,4 +19,4 @@ script:
   - make cover
 
 after_success:
-  - codecov
+  - bash <(curl -s https://codecov.io/bash)
