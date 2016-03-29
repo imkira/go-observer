@@ -4,6 +4,7 @@
 [![GoDoc](https://godoc.org/github.com/imkira/go-observer?status.svg)](https://godoc.org/github.com/imkira/go-observer)
 [![Build Status](http://img.shields.io/travis/imkira/go-observer.svg?style=flat)](https://travis-ci.org/imkira/go-observer)
 [![Coverage](http://img.shields.io/codecov/c/github/imkira/go-observer.svg?style=flat)](https://codecov.io/github/imkira/go-observer)
+[![codebeat badge](https://codebeat.co/badges/28bdd579-8b34-4940-a3e0-35ac52794a42)](https://codebeat.co/projects/github-com-imkira-go-observer)
 
 observer is a [Go](http://golang.org) package that aims to simplify the problem
 of channel-based broadcasting of events from one or more publishers to one or
