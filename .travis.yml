@@ -9,11 +9,15 @@ go:
 before_install:
   - sudo pip install codecov
   - go get -u golang.org/x/tools/cmd/cover
-  - go get -u github.com/golang/lint/golint
+  - if [[ $TRAVIS_GO_VERSION == 1.6* ]]; then go get -u github.com/golang/lint/golint; fi
   - go get -u golang.org/x/tools/cmd/vet
 
 script:
-  - make
+  - make gofmt
+  - if type "golint" > /dev/null; then make golint; fi
+  - make govet
+  - make test
+  - make cover
 
 after_success:
   - codecov
