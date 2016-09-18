@@ -1,7 +1,6 @@
 package observer
 
 import (
-	"fmt"
 	"sync"
 	"testing"
 )
@@ -50,23 +49,6 @@ func TestPropertyObserveAfterUpdate(t *testing.T) {
 }
 
 func TestPropertyMultipleConcurrentReaders(t *testing.T) {
-	reader := func(s Stream, initial, final int, err chan error) {
-		val := s.Value().(int)
-		if val != initial {
-			err <- fmt.Errorf("Expecting %#v but got %#v\n", initial, val)
-			return
-		}
-		for i := initial + 1; i <= final; i++ {
-			prevVal := val
-			val = s.WaitNext().(int)
-			expected := prevVal + 1
-			if val != expected {
-				err <- fmt.Errorf("Expecting %#v but got %#v\n", expected, val)
-				return
-			}
-		}
-		close(err)
-	}
 	initial := 1000
 	final := 2000
 	prop := NewProperty(initial)
@@ -74,7 +56,7 @@ func TestPropertyMultipleConcurrentReaders(t *testing.T) {
 	for i := 0; i < 1000; i++ {
 		cherr := make(chan error, 1)
 		cherrs = append(cherrs, cherr)
-		go reader(prop.Observe(), initial, final, cherr)
+		go testStreamRead(prop.Observe(), initial, final, cherr)
 	}
 	done := make(chan bool)
 	go func(prop Property, initial, final int, done chan bool) {

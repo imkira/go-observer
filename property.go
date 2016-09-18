@@ -3,8 +3,8 @@ package observer
 import "sync"
 
 // Property is an object that is continuously updated by one or more
-// publishers.  It is completely goroutine safe: you can use Property concurrently
-// from multiple goroutines.
+// publishers. It is completely goroutine safe: you can use Property
+// concurrently from multiple goroutines.
 type Property interface {
 	// Value returns the current value for this property.
 	Value() interface{}

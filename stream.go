@@ -63,9 +63,7 @@ func (s *stream) HasNext() bool {
 }
 
 func (s *stream) WaitNext() interface{} {
-	select {
-	case <-s.state.done:
-		s.state = s.state.next
-		return s.state.value
-	}
+	<-s.state.done
+	s.state = s.state.next
+	return s.state.value
 }

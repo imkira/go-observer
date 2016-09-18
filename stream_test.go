@@ -57,22 +57,18 @@ func TestStreamDetectsChanges(t *testing.T) {
 	case <-time.After(2 * time.Second):
 		t.Fatalf("Expecting changes\n")
 	}
-	for i := 0; i <= 100; i++ {
-		select {
-		case <-stream.Changes():
-		default:
-			t.Fatalf("Expecting changes\n")
-		}
+	select {
+	case <-stream.Changes():
+	default:
+		t.Fatalf("Expecting changes\n")
 	}
 	if val := stream.Next(); val != 15 {
 		t.Fatalf("Expecting 15 but got %#v\n", val)
 	}
-	for i := 0; i <= 100; i++ {
-		select {
-		case <-stream.Changes():
-			t.Fatalf("Expecting no changes\n")
-		default:
-		}
+	select {
+	case <-stream.Changes():
+		t.Fatalf("Expecting no changes\n")
+	default:
 	}
 }
 
@@ -142,23 +138,6 @@ func TestStreamClone(t *testing.T) {
 }
 
 func TestStreamConcurrencyWithClones(t *testing.T) {
-	observer := func(s Stream, initial, final int, err chan error) {
-		val := s.Value().(int)
-		if val != initial {
-			err <- fmt.Errorf("Expecting %#v but got %#v\n", initial, val)
-			return
-		}
-		for i := initial + 1; i <= final; i++ {
-			prevVal := val
-			val = s.WaitNext().(int)
-			expected := prevVal + 1
-			if val != expected {
-				err <- fmt.Errorf("Expecting %#v but got %#v\n", expected, val)
-				return
-			}
-		}
-		close(err)
-	}
 	initial := 1000
 	final := 2000
 	prop := NewProperty(initial)
@@ -167,7 +146,7 @@ func TestStreamConcurrencyWithClones(t *testing.T) {
 	for i := 0; i < 1000; i++ {
 		cherr := make(chan error, 1)
 		cherrs = append(cherrs, cherr)
-		go observer(stream.Clone(), initial, final, cherr)
+		go testStreamRead(stream.Clone(), initial, final, cherr)
 	}
 	done := make(chan bool)
 	go func(prop Property, initial, final int, done chan bool) {
@@ -182,4 +161,22 @@ func TestStreamConcurrencyWithClones(t *testing.T) {
 		}
 	}
 	<-done
+}
+
+func testStreamRead(s Stream, initial, final int, err chan error) {
+	val := s.Value().(int)
+	if val != initial {
+		err <- fmt.Errorf("Expecting %#v but got %#v\n", initial, val)
+		return
+	}
+	for i := initial + 1; i <= final; i++ {
+		prevVal := val
+		val = s.WaitNext().(int)
+		expected := prevVal + 1
+		if val != expected {
+			err <- fmt.Errorf("Expecting %#v but got %#v\n", expected, val)
+			return
+		}
+	}
+	close(err)
 }
