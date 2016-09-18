@@ -6,17 +6,14 @@ go:
   - 1.4
   - 1.5
   - 1.6
+  - 1.7
   - tip
 
 before_install:
-  - go get -u golang.org/x/tools/cmd/cover
-  - if [[ $TRAVIS_GO_VERSION == 1.6* ]]; then go get -u github.com/golang/lint/golint; fi
-  - go get -u golang.org/x/tools/cmd/vet
+  if [[ $TRAVIS_GO_VERSION == 1.7* ]]; then make deps; fi
 
 script:
-  - make gofmt
-  - if type "golint" > /dev/null; then make golint; fi
-  - make govet
+  - if [[ $TRAVIS_GO_VERSION == 1.7* ]]; then make gometalinter; fi
   - make test
   - make cover
 
