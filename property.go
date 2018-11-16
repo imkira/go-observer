@@ -1,6 +1,9 @@
 package observer
 
-import "sync"
+import (
+	"reflect"
+	"sync"
+)
 
 // Property is an object that is continuously updated by one or more
 // publishers. It is completely goroutine safe: you can use Property
@@ -36,6 +39,9 @@ func (p *property) Value() interface{} {
 func (p *property) Update(value interface{}) {
 	p.Lock()
 	defer p.Unlock()
+	if reflect.DeepEqual(p.state.value, value) {
+		return
+	}
 	p.state = p.state.update(value)
 }
 
