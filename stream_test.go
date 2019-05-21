@@ -137,6 +137,23 @@ func TestStreamClone(t *testing.T) {
 	}
 }
 
+func TestStreamPeek(t *testing.T) {
+	state := newState(10)
+	stream := &stream{state: state}
+	state = state.update(15)
+	if val := stream.Peek(); val != 15 {
+		t.Fatalf("Expecting 15 but got %#v\n", val)
+	}
+	state = state.update(20)
+	if val := stream.Peek(); val != 15 {
+		t.Fatalf("Expecting 15 but got %#v\n", val)
+	}
+	stream.Next()
+	if val := stream.Peek(); val != 20 {
+		t.Fatalf("Expecting 20 but got %#v\n", val)
+	}
+}
+
 func TestStreamConcurrencyWithClones(t *testing.T) {
 	initial := 1000
 	final := 2000
