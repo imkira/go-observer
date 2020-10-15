@@ -30,6 +30,10 @@ type Stream interface {
 	// they may have different values depending on when they advance the stream
 	// with Next.
 	Clone() Stream
+
+	// Peek return the value in the next state
+	// You should never call this unless Changes channel is closed.
+	Peek() interface{}
 }
 
 type stream struct {
@@ -66,4 +70,8 @@ func (s *stream) WaitNext() interface{} {
 	<-s.state.done
 	s.state = s.state.next
 	return s.state.value
+}
+
+func (s *stream) Peek() interface{} {
+	return s.state.next.value
 }
