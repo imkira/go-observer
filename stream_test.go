@@ -8,7 +8,7 @@ import (
 
 func TestStreamInitialValue(t *testing.T) {
 	state := newState(10)
-	stream := &stream{state: state}
+	stream := &stream[int]{state: state}
 	if val := stream.Value(); val != 10 {
 		t.Fatalf("Expecting 10 but got %#v\n", val)
 	}
@@ -17,7 +17,7 @@ func TestStreamInitialValue(t *testing.T) {
 func TestStreamUpdate(t *testing.T) {
 	state1 := newState(10)
 	state2 := state1.update(15)
-	stream := &stream{state: state1}
+	stream := &stream[int]{state: state1}
 	if val := stream.Value(); val != 10 {
 		t.Fatalf("Expecting 10 but got %#v\n", val)
 	}
@@ -29,7 +29,7 @@ func TestStreamUpdate(t *testing.T) {
 
 func TestStreamNextValue(t *testing.T) {
 	state1 := newState(10)
-	stream := &stream{state: state1}
+	stream := &stream[int]{state: state1}
 	state2 := state1.update(15)
 	if val := stream.Next(); val != 15 {
 		t.Fatalf("Expecting 15 but got %#v\n", val)
@@ -42,7 +42,7 @@ func TestStreamNextValue(t *testing.T) {
 
 func TestStreamDetectsChanges(t *testing.T) {
 	state := newState(10)
-	stream := &stream{state: state}
+	stream := &stream[int]{state: state}
 	select {
 	case <-stream.Changes():
 		t.Fatalf("Expecting no changes\n")
@@ -74,7 +74,7 @@ func TestStreamDetectsChanges(t *testing.T) {
 
 func TestStreamHasChanges(t *testing.T) {
 	state := newState(10)
-	stream := &stream{state: state}
+	stream := &stream[int]{state: state}
 	if stream.HasNext() {
 		t.Fatalf("Expecting no changes\n")
 	}
@@ -89,7 +89,7 @@ func TestStreamHasChanges(t *testing.T) {
 
 func TestStreamWaitsNext(t *testing.T) {
 	state := newState(10)
-	stream := &stream{state: state}
+	stream := &stream[int]{state: state}
 	for i := 15; i <= 100; i++ {
 		state = state.update(i)
 		if val := stream.WaitNext(); val != i {
@@ -103,7 +103,7 @@ func TestStreamWaitsNext(t *testing.T) {
 
 func TestStreamClone(t *testing.T) {
 	state := newState(10)
-	stream1 := &stream{state: state}
+	stream1 := &stream[int]{state: state}
 	stream2 := stream1.Clone()
 	if stream2.HasNext() {
 		t.Fatalf("Expecting no changes\n")
@@ -139,7 +139,7 @@ func TestStreamClone(t *testing.T) {
 
 func TestStreamPeek(t *testing.T) {
 	state := newState(10)
-	stream := &stream{state: state}
+	stream := &stream[int]{state: state}
 	state = state.update(15)
 	if val := stream.Peek(); val != 15 {
 		t.Fatalf("Expecting 15 but got %#v\n", val)
@@ -166,7 +166,7 @@ func TestStreamConcurrencyWithClones(t *testing.T) {
 		go testStreamRead(stream.Clone(), initial, final, cherr)
 	}
 	done := make(chan bool)
-	go func(prop Property, initial, final int, done chan bool) {
+	go func(prop Property[int], initial, final int, done chan bool) {
 		defer close(done)
 		for i := initial + 1; i <= final; i++ {
 			prop.Update(i)
@@ -180,15 +180,15 @@ func TestStreamConcurrencyWithClones(t *testing.T) {
 	<-done
 }
 
-func testStreamRead(s Stream, initial, final int, err chan error) {
-	val := s.Value().(int)
+func testStreamRead(s Stream[int], initial, final int, err chan error) {
+	val := s.Value()
 	if val != initial {
 		err <- fmt.Errorf("Expecting %#v but got %#v\n", initial, val)
 		return
 	}
 	for i := initial + 1; i <= final; i++ {
 		prevVal := val
-		val = s.WaitNext().(int)
+		val = s.WaitNext()
 		expected := prevVal + 1
 		if val != expected {
 			err <- fmt.Errorf("Expecting %#v but got %#v\n", expected, val)
