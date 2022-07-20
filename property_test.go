@@ -20,7 +20,7 @@ func TestPropertyInitialValue(t *testing.T) {
 
 func TestPropertyInitialObserve(t *testing.T) {
 	prop := NewProperty(10)
-	var prevStream Stream
+	var prevStream Stream[int]
 	for i := 0; i <= 100; i++ {
 		stream := prop.Observe()
 		if stream == prevStream {
@@ -59,7 +59,7 @@ func TestPropertyMultipleConcurrentReaders(t *testing.T) {
 		go testStreamRead(prop.Observe(), initial, final, cherr)
 	}
 	done := make(chan bool)
-	go func(prop Property, initial, final int, done chan bool) {
+	go func(prop Property[int], initial, final int, done chan bool) {
 		defer close(done)
 		for i := initial + 1; i <= final; i++ {
 			prop.Update(i)
@@ -75,10 +75,10 @@ func TestPropertyMultipleConcurrentReaders(t *testing.T) {
 
 func TestPropertyMultipleConcurrentReadersWriters(t *testing.T) {
 	wg := &sync.WaitGroup{}
-	writer := func(prop Property, times int) {
+	writer := func(prop Property[int], times int) {
 		defer wg.Done()
 		for i := 0; i <= times; i++ {
-			val := prop.Value().(int)
+			val := prop.Value()
 			prop.Update(val + 1)
 			prop.Observe()
 		}

@@ -1,19 +1,19 @@
 package observer
 
-type state struct {
-	value interface{}
-	next  *state
+type state[T any] struct {
+	value T
+	next  *state[T]
 	done  chan struct{}
 }
 
-func newState(value interface{}) *state {
-	return &state{
+func newState[T any](value T) *state[T] {
+	return &state[T]{
 		value: value,
 		done:  make(chan struct{}),
 	}
 }
 
-func (s *state) update(value interface{}) *state {
+func (s *state[T]) update(value T) *state[T] {
 	s.next = newState(value)
 	close(s.done)
 	return s.next
