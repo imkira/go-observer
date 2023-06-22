@@ -1,6 +1,7 @@
 package observer
 
 import (
+	"context"
 	"fmt"
 	"testing"
 	"time"
@@ -96,6 +97,35 @@ func TestStreamWaitsNext(t *testing.T) {
 			t.Fatalf("Expecting %#v but got %#v\n", i, val)
 		}
 	}
+	if stream.HasNext() {
+		t.Fatalf("Expecting no changes\n")
+	}
+}
+
+func TestStreamWaitsNextCtx(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	state := newState(0)
+	stream := &stream[int]{state: state}
+	for i := 7; i <= 133; i++ {
+		state = state.update(i)
+		got, err := stream.WaitNextCtx(ctx)
+		if err != nil {
+			t.Fatalf("Expecting no error\n")
+		}
+		if got != i {
+			t.Fatalf("Expecting %#v but got %#v\n", i, got)
+		}
+	}
+
+	// cancel the context
+	cancel()
+
+	// ensure the method returns the error
+	_, err := stream.WaitNextCtx(ctx)
+	if err == nil {
+		t.Fatalf("Expecting error but got none\n")
+	}
+
 	if stream.HasNext() {
 		t.Fatalf("Expecting no changes\n")
 	}

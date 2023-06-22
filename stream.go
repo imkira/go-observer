@@ -1,5 +1,7 @@
 package observer
 
+import "context"
+
 // Stream represents the list of values a property is updated to.  For every
 // property update, that value is appended to the list in the order they
 // happen. The value is discarded once you advance the stream.  Please note
@@ -24,6 +26,11 @@ type Stream[T any] interface {
 	// WaitNext waits for Changes to be closed, advances the stream and returns
 	// the current value.
 	WaitNext() T
+
+	// WaitNextCtx waits for Changes to be closed or the passed context to be canceled.
+	// When Changes is closed first, it advances the stream and returns the current value.
+	// When the context is canceled first, the error recieved from the context is returned.
+	WaitNextCtx(ctx context.Context) (T, error)
 
 	// Clone creates a new independent stream from this one but sharing the same
 	// Property. Updates to the property will be reflected in both streams but
@@ -70,6 +77,19 @@ func (s *stream[T]) WaitNext() T {
 	<-s.state.done
 	s.state = s.state.next
 	return s.state.value
+}
+
+func (s *stream[T]) WaitNextCtx(ctx context.Context) (T, error) {
+	select {
+	// wait for changes
+	case <-s.Changes():
+		// advance to next value and return it
+		return s.Next(), nil
+
+	case <-ctx.Done():
+		var zeroVal T
+		return zeroVal, ctx.Err()
+	}
 }
 
 func (s *stream[T]) Peek() T {
