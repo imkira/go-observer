@@ -27,9 +27,7 @@ type Stream[T any] interface {
 	// the current value.
 	WaitNext() T
 
-	// WaitNextCtx waits for Changes to be closed or the passed context to be canceled.
-	// When Changes is closed first, it advances the stream and returns the current value.
-	// When the context is canceled first, the error recieved from the context is returned.
+	// WaitNextCtx does the same as WaitNext but returns earlier with an error if the given context is cancelled first.
 	WaitNextCtx(ctx context.Context) (T, error)
 
 	// Clone creates a new independent stream from this one but sharing the same
