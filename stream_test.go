@@ -2,6 +2,7 @@ package observer
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"testing"
 	"time"
@@ -128,6 +129,46 @@ func TestStreamWaitsNextCtx(t *testing.T) {
 
 	if stream.HasNext() {
 		t.Fatalf("Expecting no changes\n")
+	}
+}
+
+func TestStreamWaitsNextCtxCancelledEarly(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	state := newState(0)
+	stream := &stream[int]{state: state}
+	for i := 1; i <= 100; i++ {
+		state = state.update(i)
+		got, err := stream.WaitNextCtx(ctx)
+		if err != nil {
+			t.Fatalf("Expecting no error\n")
+		}
+		if got != i {
+			t.Fatalf("Expecting %#v but got %#v\n", i, got)
+		}
+	}
+
+	// cancel the context
+	cancel()
+
+	for i := 0; i < 50; i++ {
+		// ensure the method returns the error for a cancelled context
+		_, err := stream.WaitNextCtx(ctx)
+		if !errors.Is(err, context.Canceled) {
+			t.Fatalf("Expecting error to be context.Canceled\n")
+		}
+	}
+}
+
+func TestStreamWaitsNextCtxTimedOut(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 0)
+	defer cancel()
+
+	state := newState(0)
+	stream := &stream[int]{state: state}
+	state = state.update(17)
+	_, err := stream.WaitNextCtx(ctx)
+	if !errors.Is(err, context.DeadlineExceeded) {
+		t.Fatalf("Expecting error to be context.DeadlineExceeded\n")
 	}
 }
 

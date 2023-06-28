@@ -79,10 +79,9 @@ func (s *stream[T]) WaitNext() T {
 
 func (s *stream[T]) WaitNextCtx(ctx context.Context) (T, error) {
 	select {
-	// wait for changes
 	case <-s.Changes():
-		// advance to next value and return it
-		return s.Next(), nil
+		// always return context.Err() to indicate a cancelled or timed out context
+		return s.Next(), ctx.Err()
 
 	case <-ctx.Done():
 		var zeroVal T
