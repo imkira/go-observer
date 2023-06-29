@@ -1,6 +1,7 @@
 package observer
 
 import (
+	"context"
 	"fmt"
 	"testing"
 	"time"
@@ -96,6 +97,62 @@ func TestStreamWaitsNext(t *testing.T) {
 			t.Fatalf("Expecting %#v but got %#v\n", i, val)
 		}
 	}
+	if stream.HasNext() {
+		t.Fatalf("Expecting no changes\n")
+	}
+}
+
+func TestStreamWaitNextBackgroundCtx(t *testing.T) {
+	state := newState(0)
+	stream := &stream[int]{state: state}
+	for i := 7; i <= 133; i++ {
+		state = state.update(i)
+		got, err := stream.WaitNextCtx(context.Background())
+		if err != nil {
+			t.Fatalf("Expecting no error\n")
+		}
+		if got != i {
+			t.Fatalf("Expecting %#v but got %#v\n", i, got)
+		}
+	}
+
+	if stream.HasNext() {
+		t.Fatalf("Expecting no changes\n")
+	}
+}
+
+func TestStreamWaitNextCanceledCtx(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	initialVal := 99
+	state := newState(initialVal)
+	stream := &stream[int]{state: state}
+
+	// cancel the context
+	cancel()
+
+	updateVal := initialVal + 17
+	state = state.update(updateVal)
+
+	for i := 0; i < 100; i++ {
+		// ensure the method returns an error when a canceled context is used and doesn't advance the stream
+		_, err := stream.WaitNextCtx(ctx)
+		if err == nil {
+			t.Fatalf("Expecting error but got none\n")
+		}
+		if stream.Value() != initialVal {
+			t.Fatalf("Expecting stream's current value to be %#v but it is %#v\n", initialVal, stream.Value())
+		}
+	}
+
+	// check that a call with a non-canceled context works
+	got, err := stream.WaitNextCtx(context.Background())
+	if err != nil {
+		t.Fatalf("Expecting no error\n")
+	}
+	if got != updateVal {
+		t.Fatalf("Expecting %#v but got %#v\n", updateVal, got)
+	}
+
 	if stream.HasNext() {
 		t.Fatalf("Expecting no changes\n")
 	}
