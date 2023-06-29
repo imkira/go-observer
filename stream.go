@@ -80,13 +80,16 @@ func (s *stream[T]) WaitNext() T {
 func (s *stream[T]) WaitNextCtx(ctx context.Context) (T, error) {
 	select {
 	case <-s.Changes():
-		// always return context.Err() to indicate a cancelled or timed out context
-		return s.Next(), ctx.Err()
+		// ensure that context is not canceled, only then advance the stream
+		if ctx.Err() == nil {
+			return s.Next(), nil
+		}
 
 	case <-ctx.Done():
-		var zeroVal T
-		return zeroVal, ctx.Err()
 	}
+
+	var zeroVal T
+	return zeroVal, ctx.Err()
 }
 
 func (s *stream[T]) Peek() T {

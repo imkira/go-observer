@@ -102,28 +102,18 @@ func TestStreamWaitsNext(t *testing.T) {
 	}
 }
 
-func TestStreamWaitsNextCtx(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
+func TestStreamWaitNextBackgroundCtx(t *testing.T) {
 	state := newState(0)
 	stream := &stream[int]{state: state}
 	for i := 7; i <= 133; i++ {
 		state = state.update(i)
-		got, err := stream.WaitNextCtx(ctx)
+		got, err := stream.WaitNextCtx(context.Background())
 		if err != nil {
 			t.Fatalf("Expecting no error\n")
 		}
 		if got != i {
 			t.Fatalf("Expecting %#v but got %#v\n", i, got)
 		}
-	}
-
-	// cancel the context
-	cancel()
-
-	// ensure the method returns the error
-	_, err := stream.WaitNextCtx(ctx)
-	if err == nil {
-		t.Fatalf("Expecting error but got none\n")
 	}
 
 	if stream.HasNext() {
@@ -131,43 +121,40 @@ func TestStreamWaitsNextCtx(t *testing.T) {
 	}
 }
 
-func TestStreamWaitsNextCtxCancelledEarly(t *testing.T) {
+func TestStreamWaitNextCanceledCtx(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
-	state := newState(0)
+	initialVal := 99
+	state := newState(initialVal)
 	stream := &stream[int]{state: state}
-	for i := 1; i <= 100; i++ {
-		state = state.update(i)
-		got, err := stream.WaitNextCtx(ctx)
-		if err != nil {
-			t.Fatalf("Expecting no error\n")
-		}
-		if got != i {
-			t.Fatalf("Expecting %#v but got %#v\n", i, got)
-		}
-	}
 
 	// cancel the context
 	cancel()
 
-	for i := 0; i < 50; i++ {
-		// ensure the method returns the error for a cancelled context
+	updateVal := initialVal + 17
+	state = state.update(updateVal)
+
+	for i := 0; i < 100; i++ {
+		// ensure the method returns an error when a canceled context is used and doesn't advance the stream
 		_, err := stream.WaitNextCtx(ctx)
 		if err == nil {
 			t.Fatalf("Expecting error but got none\n")
 		}
+		if stream.Value() != initialVal {
+			t.Fatalf("Expecting stream's current value to be %#v but it is %#v\n", initialVal, stream.Value())
+		}
 	}
-}
 
-func TestStreamWaitsNextCtxTimedOut(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), 0)
-	defer cancel()
+	// check that a call with a non-canceled context works
+	got, err := stream.WaitNextCtx(context.Background())
+	if err != nil {
+		t.Fatalf("Expecting no error\n")
+	}
+	if got != updateVal {
+		t.Fatalf("Expecting %#v but got %#v\n", updateVal, got)
+	}
 
-	state := newState(0)
-	stream := &stream[int]{state: state}
-	state = state.update(17)
-	_, err := stream.WaitNextCtx(ctx)
-	if err == nil {
-		t.Fatalf("Expecting error but got none\n")
+	if stream.HasNext() {
+		t.Fatalf("Expecting no changes\n")
 	}
 }
 
