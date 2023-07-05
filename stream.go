@@ -27,8 +27,14 @@ type Stream[T any] interface {
 	// the current value.
 	WaitNext() T
 
+	// WaitNextFiltered does the same as WaitNext but only returns when filterFunc evaluates to true.
+	WaitNextFiltered(filterFunc func(T) bool) T
+
 	// WaitNextCtx does the same as WaitNext but returns earlier with an error if the given context is cancelled first.
 	WaitNextCtx(ctx context.Context) (T, error)
+
+	// WaitNextCtxFiltered does the same as WaitNextCtx and additionally only returns the value when filterFunc evaluates to true.
+	WaitNextCtxFiltered(ctx context.Context, filterFunc func(T) bool) (T, error)
 
 	// Clone creates a new independent stream from this one but sharing the same
 	// Property. Updates to the property will be reflected in both streams but
@@ -77,6 +83,15 @@ func (s *stream[T]) WaitNext() T {
 	return s.state.value
 }
 
+func (s *stream[T]) WaitNextFiltered(filterFunc func(T) bool) T {
+	for {
+		val := s.WaitNext()
+		if evaluateFilterFunc[T](val, filterFunc) {
+			return val
+		}
+	}
+}
+
 func (s *stream[T]) WaitNextCtx(ctx context.Context) (T, error) {
 	select {
 	case <-s.Changes():
@@ -92,6 +107,22 @@ func (s *stream[T]) WaitNextCtx(ctx context.Context) (T, error) {
 	return zeroVal, ctx.Err()
 }
 
+func (s *stream[T]) WaitNextCtxFiltered(ctx context.Context, filterFunc func(T) bool) (T, error) {
+	for {
+		val, err := s.WaitNextCtx(ctx)
+		if err != nil {
+			return val, err
+		}
+		if evaluateFilterFunc[T](val, filterFunc) {
+			return val, nil
+		}
+	}
+}
+
 func (s *stream[T]) Peek() T {
 	return s.state.next.value
+}
+
+func evaluateFilterFunc[T any](val T, filterFunc func(T) bool) bool {
+	return filterFunc == nil || filterFunc(val)
 }

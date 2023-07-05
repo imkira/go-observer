@@ -102,6 +102,35 @@ func TestStreamWaitsNext(t *testing.T) {
 	}
 }
 
+func TestStreamWaitsNextFiltered(t *testing.T) {
+	state := newState(0)
+	stream := &stream[int]{state: state}
+
+	values := []int{1, 11, 2, 3, 33, 4, 5, 6, 7, 77, 8, 9, 10}
+	filteredValues := []int{2, 4, 6, 8, 10}
+
+	onlyEvenFilter := func(i int) bool {
+		return i%2 == 0
+	}
+
+	for _, i := range values {
+		state = state.update(i)
+	}
+
+	i := 0
+	for stream.HasNext() {
+		val := stream.WaitNextFiltered(onlyEvenFilter)
+		if val != filteredValues[i] {
+			t.Fatalf("Expecting %#v but got %#v\n", filteredValues[i], val)
+		}
+		i++
+	}
+
+	if stream.HasNext() {
+		t.Fatalf("Expecting no changes\n")
+	}
+}
+
 func TestStreamWaitNextBackgroundCtx(t *testing.T) {
 	state := newState(0)
 	stream := &stream[int]{state: state}
@@ -151,6 +180,54 @@ func TestStreamWaitNextCanceledCtx(t *testing.T) {
 	}
 	if got != updateVal {
 		t.Fatalf("Expecting %#v but got %#v\n", updateVal, got)
+	}
+
+	if stream.HasNext() {
+		t.Fatalf("Expecting no changes\n")
+	}
+}
+
+func TestStreamWaitNextCtxFiltered(t *testing.T) {
+	state := newState(0)
+	stream := &stream[int]{state: state}
+
+	onlyOddFilter := func(i int) bool {
+		return i%2 != 0
+	}
+
+	state = state.update(2)
+	state = state.update(3)
+
+	lastAwaitedVal, err := stream.WaitNextCtxFiltered(context.Background(), onlyOddFilter)
+	if err != nil {
+		t.Fatalf("Expecting no error\n")
+	}
+	if lastAwaitedVal != 3 {
+		t.Fatalf("Expecting 3 but got %#v\n", lastAwaitedVal)
+	}
+
+	if stream.HasNext() {
+		t.Fatalf("Expecting no changes\n")
+	}
+
+	state = state.update(4)
+
+	// ensure the method returns an error when a canceled context is used and doesn't advance the stream
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	_, err = stream.WaitNextCtxFiltered(ctx, onlyOddFilter)
+	if err == nil {
+		t.Fatalf("Expecting error but got none\n")
+	}
+	if stream.Value() != lastAwaitedVal {
+		t.Fatalf("Expecting stream's current value to be %#v but it is %#v\n", lastAwaitedVal, stream.Value())
+	}
+
+	ctx, cancel = context.WithTimeout(context.Background(), 100*time.Millisecond)
+	defer cancel()
+	_, err = stream.WaitNextCtxFiltered(ctx, onlyOddFilter)
+	if err == nil {
+		t.Fatalf("Expecting error but got none\n")
 	}
 
 	if stream.HasNext() {
